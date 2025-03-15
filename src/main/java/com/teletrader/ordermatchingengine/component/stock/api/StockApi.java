@@ -8,9 +8,9 @@ import java.util.Optional;
 
 public interface StockApi {
 
-    public Optional<Stock> getById(Long stockId);
+    Optional<Stock> getById(Long stockId);
 
-    public List<Stock> getAllStocks();
+    List<Stock> getAllStocks();
 
-    public List<Order> getBookOrders(Long stockId);
+    List<Order> getBookOrders(Long stockId);
 }
