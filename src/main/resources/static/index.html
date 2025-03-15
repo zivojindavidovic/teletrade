@@ -18,12 +18,12 @@
     stompClient.connect({}, function (frame) {
         console.log('Connected: ' + frame);
 
-        stompClient.subscribe('/topic/orders', function (message) {
+        stompClient.subscribe('/topic/1/order-book', function (message) {
             var orders = JSON.parse(message.body);
             displayOrders(orders);
         });
 
-        stompClient.send("/app/getOrders", {});
+        stompClient.send("/app/1/order-book", {});
     });
 
     function displayOrders(orders) {
