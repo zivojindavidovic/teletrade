@@ -1,35 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>WebSocket Orders</title>
+
+    <!-- Include SockJS and Stomp.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
 <body>
 <h2>Live Order Book</h2>
+<div id="stocks"></div>
 <div id="orders"></div>
 
 <script>
-    var socket = new SockJS('http://localhost:8080/ws');
-    var stompClient = Stomp.over(socket);
+    let stompClient = null;
+    let currentSubscription = null;
 
-    stompClient.connect({}, function (frame) {
-        console.log('Connected: ' + frame);
+    function connectStomp() {
+        const socket = new SockJS('http://localhost:8089/ws');
+        stompClient = Stomp.over(socket);
 
-        stompClient.subscribe('/topic/1/order-book', function (message) {
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+            loadStockList();
+        });
+    }
+
+    function loadStockList() {
+        fetch('http://localhost:8089/api/v1/stocks')
+            .then(response => response.json())
+            .then(result => {
+                if (result.success && Array.isArray(result.data)) {
+                    displayStocks(result.data);
+                } else {
+                    console.error('Failed to load stock data');
+                }
+            })
+            .catch(error => console.error('Error fetching stocks:', error));
+    }
+
+    function displayStocks(stocks) {
+        const stocksDiv = document.getElementById("stocks");
+        stocksDiv.innerHTML = "";
+
+        stocks.forEach(stock => {
+            const button = document.createElement("button");
+            button.textContent = `${stock.symbol} (ID: ${stock.stockId})`;
+            button.onclick = () => subscribeToStock(stock.stockId);
+            stocksDiv.appendChild(button);
+        });
+    }
+
+    function subscribeToStock(stockId) {
+        if (currentSubscription) {
+            currentSubscription.unsubscribe();
+            currentSubscription = null;
+        }
+
+        currentSubscription = stompClient.subscribe(`/topic/${stockId}/order-book`, function (message) {
             var orders = JSON.parse(message.body);
             displayOrders(orders);
         });
 
-        stompClient.send("/app/1/order-book", {});
-    });
+        stompClient.send(`/app/${stockId}/order-book`, {});
+    }
 
     function displayOrders(orders) {
         var ordersDiv = document.getElementById("orders");
         ordersDiv.innerHTML = "<pre>" + JSON.stringify(orders, null, 2) + "</pre>";
     }
+
+    connectStomp();
 </script>
 </body>
 </html>

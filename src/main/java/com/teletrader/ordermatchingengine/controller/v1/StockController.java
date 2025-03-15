@@ -5,6 +5,8 @@ import com.teletrader.ordermatchingengine.component.stock.api.StockApi;
 import com.teletrader.ordermatchingengine.component.stock.model.Stock;
 import com.teletrader.ordermatchingengine.controller.v1.payload.response.OrderBookResponse;
 import com.teletrader.ordermatchingengine.controller.v1.payload.response.OrderResponse;
+import com.teletrader.ordermatchingengine.controller.v1.payload.response.Response;
+import com.teletrader.ordermatchingengine.controller.v1.payload.response.StockResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -26,8 +28,23 @@ public class StockController {
     private final StockApi stockApi;
 
     @GetMapping
-    public ResponseEntity<List<Stock>> getAllStocks() {
-        return ResponseEntity.ok(stockApi.getAllStocks());
+    public ResponseEntity<Response<List<StockResponse>>> getAllStocks() {
+        List<Stock> stocks = stockApi.getAllStocks();
+
+        List<StockResponse> stockResponses = stocks.stream()
+                .map(stock -> StockResponse.builder()
+                        .stockId(stock.getStockId())
+                        .symbol(stock.getSymbol())
+                        .build()
+                ).toList();
+
+        return ResponseEntity.ok(
+                Response.<List<StockResponse>>builder()
+                        .success(true)
+                        .errors(List.of())
+                        .data(stockResponses)
+                        .build()
+        );
     }
 
     @GetMapping("/{stockId}")
