@@ -1,4 +1,4 @@
-package com.teletrader.ordermatchingengine;
+package com.teletrader.ordermatchingengine.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
